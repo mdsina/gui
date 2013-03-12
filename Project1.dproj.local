@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899.12.30 00:00:00.000.446,D:\gama2\openilut.pas=</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.701,=D:\gama2\openilut.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.169,=C:\Users\MDS\Documents\RAD Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.204,=D:\gama2\Unit2.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.776,D:\gama2\Unit1.pas=C:\Users\MDS\Documents\RAD Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.228,D:\gama2\openil.pas=</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.395,=D:\gama2\openilu.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.206,D:\gama2\openilu.pas=</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.776,D:\gama2\Unit1.dfm=C:\Users\MDS\Documents\RAD Studio\Projects\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.166,=D:\gama2\openil.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.602,D:\gama2\Project1.dproj=C:\Users\MDS\Documents\RAD Studio\Projects\Project1.dproj</Transaction>
+  </Transactions>
+</BorlandProject>

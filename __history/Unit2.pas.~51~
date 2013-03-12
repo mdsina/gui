@@ -1,0 +1,726 @@
+unit Unit2;
+
+interface
+
+uses dglOpengl, Windows, openil, openilu, Messages, SysUtils;
+
+Type
+  SymbolTType = record
+  x: real;
+  y: real;
+  width:real;
+  height: real;
+  ptSymbol:gluint;
+  end;
+
+  SymbolTexture = record
+  width:real;
+  height: real;
+  mSymbol: glUint;
+  end;
+  Rectangle = record
+  x:         real;
+  y:         real;
+  width:   real;
+  height:  real;
+  end;
+
+  Textures = record
+  gobject:array[1..500] of glUint;
+  end;
+
+  TAnimation = class
+  protected
+  FPictures:array of glUint;
+  FFrameTime:integer;
+  FCurrentTime:integer;
+  FStoped:boolean;
+  public
+  Constructor Create(FrameTime:integer);
+
+  Procedure   AddFrame(Picture:glUint);
+  Procedure   Start();
+  Procedure   Stop();
+  Procedure   Update(dt:integer);
+  Procedure   Draw();
+end;
+
+Var
+  TSymbol : array[1..256] of SymbolTexture;
+  Symbol_height: real;
+  Symbol_width: real;
+  pSymbol: array[1..256] of SymbolTType;
+  Tex: Textures;
+  mouse_x, mouse_y: integer;
+  tclick: boolean;
+
+function Loadpng(path : pAnsiChar) : uint32;
+procedure ReleaseFont;
+procedure draw_quad_c(_x, _y, _width, _height :real);
+procedure draw_quad_c2(r: Rectangle);
+procedure draw_quad2(r: Rectangle);
+procedure draw_quad(_x, _y, _width, _height :real);
+function TPrintText(text2:string; t1, t2,TLength: real; draw:boolean; theight:real): integer;
+function FindSymbol(strings: string; lu:string): integer;
+procedure PrintText(a: array of SymbolTType; k:integer);
+procedure TextInit;
+function CreateButton(x,y:real; padding:integer; text2:string; TLength: real; centering:string;
+            rasing:integer; draw:boolean; theight:real; texture:string; mx, my: integer):boolean;
+
+implementation
+
+function Loadpng(path : PAnsiChar) : uint32;
+var
+  gBitmap : hBitmap;
+  sBitmap : Bitmap;
+  TextureID : uint32;
+  format : uint32;
+  videoformat : uint32;
+  bpp: longint;
+begin
+  {gbitmap:=LoadImageA(GetModuleHandle(NIL), path, IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION or LR_LOADFROMFILE);
+  GetObject(gbitmap, sizeof(sbitmap), @sbitmap);
+
+  glEnable ( GL_TEXTURE_2D );
+  glGenTextures ( 1, @TextureID );
+  glBindTexture ( GL_TEXTURE_2D, TextureID );
+
+  glTexParameteri ( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri ( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri ( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri ( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+  if (sbitmap.bmBitsPixel / 8 = 4) then
+     format := GL_BGRA
+  else
+     format := GL_BGR;
+
+  if format = GL_BGR then
+      videoformat := GL_RGB
+  else
+    videoformat := GL_RGBA;
+
+
+   glTexImage2D(GL_TEXTURE_2D, 0, videoformat, sbitmap.bmWidth, sbitmap.bmHeight,
+               0, format, GL_UNSIGNED_BYTE, sBitmap.bmBits);
+
+   }
+
+
+   ilLoad(IL_PNG, pChar(path));
+   bpp:=ilGetInteger(IL_IMAGE_BYTES_PER_PIXEL);
+
+  Symbol_width:= ilGetInteger(IL_IMAGE_WIDTH);
+  Symbol_height:=ilGetInteger(IL_IMAGE_HEIGHT);
+
+  if (bpp / 8 = 4) then
+     format := GL_BGRA
+  else
+     format := GL_BGR;
+
+  if format = GL_BGR then
+    videoformat := GL_RGB
+  else
+    videoformat := GL_RGBA;
+
+   glGenTextures(1, &IndexTexture);  
+	glBindTexture(GL_TEXTURE_2D, IndexTexture); 	
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); 	
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);	
+	gluBuild2DMipmaps(GL_TEXTURE_2D, bpp, width, height, type, 
+                      GL_UNSIGNED_BYTE, data);
+
+  Result := TextureID;
+end;
+
+procedure ReleaseFont;
+begin
+  TSymbol[1].mSymbol:=Loadpng('Data\Font\1.png');
+  TSymbol[1].width:=Symbol_width;
+  TSymbol[1].height:=Symbol_height;
+
+  TSymbol[2].mSymbol:=Loadpng('Data\Font\2.png');
+  TSymbol[2].width:=Symbol_width;
+  TSymbol[2].height:=Symbol_height;
+
+  TSymbol[3].mSymbol:=Loadpng('Data\Font\3.png');
+  TSymbol[3].width:=Symbol_width;
+  TSymbol[3].height:=Symbol_height;
+
+  TSymbol[4].mSymbol:=Loadpng('Data\Font\4.png');
+  TSymbol[4].width:=Symbol_width;
+  TSymbol[4].height:=Symbol_height;
+
+  TSymbol[5].mSymbol:=Loadpng('Data\Font\5.png');
+  TSymbol[5].width:=Symbol_width;
+  TSymbol[5].height:=Symbol_height;
+
+  TSymbol[6].mSymbol:=Loadpng('Data\Font\6.png');
+  TSymbol[6].width:=Symbol_width;
+  TSymbol[6].height:=Symbol_height;
+
+  TSymbol[7].mSymbol:=Loadpng('Data\Font\7.png');
+  TSymbol[7].width:=Symbol_width;
+  TSymbol[7].height:=Symbol_height;
+
+  TSymbol[8].mSymbol:=Loadpng('Data\Font\8.png');
+  TSymbol[8].width:=Symbol_width;
+  TSymbol[8].height:=Symbol_height;
+
+  TSymbol[9].mSymbol:=Loadpng('Data\Font\9.png');
+  TSymbol[9].width:=Symbol_width;
+  TSymbol[9].height:=Symbol_height;
+
+  TSymbol[10].mSymbol:=Loadpng('Data\Font\0.png');
+  TSymbol[10].width:=Symbol_width;
+  TSymbol[10].height:=Symbol_height;
+
+  TSymbol[11].mSymbol:=Loadpng('Data\Font\t.png');
+  TSymbol[11].width:=Symbol_width;
+  TSymbol[11].height:=Symbol_height;
+
+  TSymbol[12].mSymbol:=Loadpng('Data\Font\x.png');
+  TSymbol[12].width:=Symbol_width;
+  TSymbol[12].height:=Symbol_height;
+
+  TSymbol[13].mSymbol:=Loadpng('Data\Font\l.png');
+  TSymbol[13].width:=Symbol_width;
+  TSymbol[13].height:=Symbol_height;
+
+  TSymbol[14].mSymbol:=Loadpng('Data\Font\v.png');
+  TSymbol[14].width:=Symbol_width;
+  TSymbol[14].height:=Symbol_height;
+
+  TSymbol[15].mSymbol:=Loadpng('Data\Font\e.png');
+  TSymbol[15].width:=Symbol_width;
+  TSymbol[15].height:=Symbol_height;
+
+  TSymbol[16].mSymbol:=Loadpng('Data\Font\point.png');
+  TSymbol[16].width:=Symbol_width;
+  TSymbol[16].height:=Symbol_height;
+
+  TSymbol[17].mSymbol:=Loadpng('Data\Font\a.png');
+  TSymbol[17].width:=Symbol_width;
+  TSymbol[17].height:=Symbol_height;
+
+  TSymbol[18].mSymbol:=Loadpng('Data\Font\b.png');
+  TSymbol[18].width:=Symbol_width;
+  TSymbol[18].height:=Symbol_height;
+
+  TSymbol[19].mSymbol:=Loadpng('Data\Font\c.png');
+  TSymbol[19].width:=Symbol_width;
+  TSymbol[19].height:=Symbol_height;
+
+  TSymbol[20].mSymbol:=Loadpng('Data\Font\d.png');
+  TSymbol[20].width:=Symbol_width;
+  TSymbol[20].height:=Symbol_height;
+
+  TSymbol[21].mSymbol:=Loadpng('Data\Font\f.png');
+  TSymbol[21].width:=Symbol_width;
+  TSymbol[21].height:=Symbol_height;
+
+  TSymbol[22].mSymbol:=Loadpng('Data\Font\g.png');
+  TSymbol[22].width:=Symbol_width;
+  TSymbol[22].height:=Symbol_height;
+
+  TSymbol[23].mSymbol:=Loadpng('Data\Font\h.png');
+  TSymbol[23].width:=Symbol_width;
+  TSymbol[23].height:=Symbol_height;
+
+  TSymbol[24].mSymbol:=Loadpng('Data\Font\i.png');
+  TSymbol[24].width:=Symbol_width;
+  TSymbol[24].height:=Symbol_height;
+
+  TSymbol[25].mSymbol:=Loadpng('Data\Font\j.png');
+  TSymbol[25].width:=Symbol_width;
+  TSymbol[25].height:=Symbol_height;
+
+  TSymbol[26].mSymbol:=Loadpng('Data\Font\k.png');
+  TSymbol[26].width:=Symbol_width;
+  TSymbol[26].height:=Symbol_height;
+
+  TSymbol[27].mSymbol:=Loadpng('Data\Font\m.png');
+  TSymbol[27].width:=Symbol_width;
+  TSymbol[27].height:=Symbol_height;
+
+  TSymbol[28].mSymbol:=Loadpng('Data\Font\n.png');
+  TSymbol[28].width:=Symbol_width;
+  TSymbol[28].height:=Symbol_height;
+
+  TSymbol[29].mSymbol:=Loadpng('Data\Font\o.png');
+  TSymbol[29].width:=Symbol_width;
+  TSymbol[29].height:=Symbol_height;
+
+  TSymbol[30].mSymbol:=Loadpng('Data\Font\p.png');
+  TSymbol[30].width:=Symbol_width;
+  TSymbol[30].height:=Symbol_height;
+
+  TSymbol[31].mSymbol:=Loadpng('Data\Font\q.png');
+  TSymbol[31].width:=Symbol_width;
+  TSymbol[31].height:=Symbol_height;
+
+  TSymbol[32].mSymbol:=Loadpng('Data\Font\r.png');
+  TSymbol[32].width:=Symbol_width;
+  TSymbol[32].height:=Symbol_height;
+
+  TSymbol[33].mSymbol:=Loadpng('Data\Font\s.png');
+  TSymbol[33].width:=Symbol_width;
+  TSymbol[33].height:=Symbol_height;
+
+  TSymbol[34].mSymbol:=Loadpng('Data\Font\u.png');
+  TSymbol[34].width:=Symbol_width;
+  TSymbol[34].height:=Symbol_height;
+
+  TSymbol[35].mSymbol:=Loadpng('Data\Font\w.png');
+  TSymbol[35].width:=Symbol_width;
+  TSymbol[35].height:=Symbol_height;
+
+  TSymbol[36].mSymbol:=Loadpng('Data\Font\y.png');
+  TSymbol[36].width:=Symbol_width;
+  TSymbol[36].height:=Symbol_height;
+
+  TSymbol[37].mSymbol:=Loadpng('Data\Font\z.png');
+  TSymbol[37].width:=Symbol_width;
+  TSymbol[37].height:=Symbol_height;
+
+  TSymbol[38].mSymbol:=Loadpng('Data\Font\question.png');
+  TSymbol[38].width:=Symbol_width;
+  TSymbol[38].height:=Symbol_height;
+
+  TSymbol[39].mSymbol:=Loadpng('Data\Font\space.png');
+  TSymbol[39].width:=Symbol_width;
+  TSymbol[39].height:=Symbol_height;
+end;
+
+procedure TextInit;
+begin
+  //фоны
+  Tex.gobject[1]:=Loadpng('Data\Images\1.png'); //оранжевый фон
+  Tex.gobject[2]:=Loadpng('Data\Images\2.png'); //голубой фон
+  Tex.gobject[3]:=Loadpng('Data\Images\3.png'); //светло-изумрудный фон
+  Tex.gobject[4]:=Loadpng('Data\Images\4.png'); //фиолетовый фон
+  Tex.gobject[5]:=Loadpng('Data\Images\5.png'); //бирюзовый фон
+  Tex.gobject[6]:=Loadpng('Data\Images\6.png'); //темно-изумрудный фон
+  Tex.gobject[7]:=Loadpng('Data\Images\7.png'); //рубиновый фон
+  Tex.gobject[8]:=Loadpng('Data\Images\8.png'); //светло-оранжевый фон
+  Tex.gobject[9]:=Loadpng('Data\Images\9.png'); //зеленый фон
+  //end-фоны
+
+  //элементы
+  Tex.gobject[10]:=Loadpng('Data\Images\white_vpivot.png'); //указатель
+  //end-элементы
+end;
+
+//рисуем наш квад. 0:0 - центр квада//
+procedure draw_quad_c(_x, _y, _width, _height :real);
+
+begin
+
+  glBegin( GL_QUADS );
+    glTexCoord2f(0.0, 0.0); glVertex2f(_x - (_width / 2), _y + (_height / 2));
+    glTexCoord2f(1.0, 0.0); glVertex2f(_x + (_width / 2), _y + (_height / 2));
+    glTexCoord2f(1.0, 1.0); glVertex2f(_x + (_width / 2), _y - (_height / 2));
+    glTexCoord2f(0.0, 1.0); glVertex2f(_x - (_width / 2), _y - (_height / 2));
+  glEnd();
+end;
+
+procedure draw_quad_c2(r: Rectangle);
+
+begin
+  glBegin( GL_QUADS );
+    glTexCoord2f(0.0, 0.0); glVertex2f(r.x - (r.width / 2), r.y + (r.height / 2));
+    glTexCoord2f(1.0, 0.0); glVertex2f(r.x + (r.width / 2), r.y + (r.height / 2));
+    glTexCoord2f(1.0, 1.0); glVertex2f(r.x + (r.width / 2), r.y - (r.height / 2));
+    glTexCoord2f(0.0, 1.0); glVertex2f(r.x - (r.width / 2), r.y - (r.height / 2));
+  glEnd();
+end;
+
+//рисуем наш квад. 0:0 - верхний левый угол//
+procedure draw_quad2(r: Rectangle);
+begin
+  glBegin( GL_QUADS );
+    glTexCoord2f(0.0, 0.0); glVertex2f(r.x, r.y + r.height);
+    glTexCoord2f(1.0, 0.0); glVertex2f(r.x + r.width, r.y + r.height);
+    glTexCoord2f(1.0, 1.0); glVertex2f(r.x + r.width, r.y);
+    glTexCoord2f(0.0, 1.0); glVertex2f(r.x, r.y);
+  glEnd();
+end;
+
+//рисуем наш квад. 0:0 - верхний левый угол//
+procedure draw_quad(_x, _y, _width, _height :real);
+begin
+  glBegin( GL_QUADS );
+    glTexCoord2f(0.0, 0.0); glVertex2f(_x, _y + _height);
+    glTexCoord2f(1.0, 0.0); glVertex2f(_x + _width, _y + _height);
+    glTexCoord2f(1.0, 1.0); glVertex2f(_x + _width, _y);
+    glTexCoord2f(0.0, 1.0); glVertex2f(_x, _y);
+  glEnd();
+end;
+
+procedure PrintText(a: array of SymbolTType; k:integer);
+var i:integer;
+begin
+  for I := 0 to k-1 do
+    begin
+      glBindTexture(GL_TEXTURE_2D, a[i].ptSymbol);
+      draw_quad(a[i].x,a[i].y,a[i].width,a[i].height);
+    end;
+
+end;
+
+function TPrintText(text2:string; t1, t2,TLength: real; draw:boolean; theight:real) : integer;
+var k:integer; i:integer; m1,m2:real;
+begin
+  m1:=0; m2:=0;
+  pSymbol[1].x:=t1;
+  pSymbol[1].y:=t2;
+  k:=length(text2);
+  for i:=1 to k do
+	begin
+
+        case text2[i] of
+            '0': begin
+                  pSymbol[i].ptSymbol:=tSymbol[10].mSymbol;
+                  pSymbol[i].width:=tSymbol[10].width;
+                  pSymbol[i].height:=tSymbol[10].height;
+                 end;
+            '1': begin
+                  pSymbol[i].ptSymbol:=tSymbol[1].mSymbol;
+                  pSymbol[i].width:=tSymbol[1].width;
+                  pSymbol[i].height:=tSymbol[1].height;
+                 end;
+            '2': begin
+                  pSymbol[i].ptSymbol:=tSymbol[2].mSymbol;
+                  pSymbol[i].width:=tSymbol[2].width;
+                  pSymbol[i].height:=tSymbol[2].height;
+                 end;
+            '3': begin
+                  pSymbol[i].ptSymbol:=tSymbol[3].mSymbol;
+                  pSymbol[i].width:=tSymbol[3].width;
+                  pSymbol[i].height:=tSymbol[3].height;
+                 end;
+            '4': begin
+                  pSymbol[i].ptSymbol:=tSymbol[4].mSymbol;
+                  pSymbol[i].width:=tSymbol[4].width;
+                  pSymbol[i].height:=tSymbol[4].height;
+                 end;
+            '5': begin
+                  pSymbol[i].ptSymbol:=tSymbol[5].mSymbol;
+                  pSymbol[i].width:=tSymbol[5].width;
+                  pSymbol[i].height:=tSymbol[5].height;
+                 end;
+            '6': begin
+                  pSymbol[i].ptSymbol:=tSymbol[6].mSymbol;
+                  pSymbol[i].width:=tSymbol[6].width;
+                  pSymbol[i].height:=tSymbol[6].height;
+                 end;
+            '7': begin
+                  pSymbol[i].ptSymbol:=tSymbol[7].mSymbol;
+                  pSymbol[i].width:=tSymbol[7].width;
+                  pSymbol[i].height:=tSymbol[7].height;
+                 end;
+            '8': begin
+                  pSymbol[i].ptSymbol:=tSymbol[8].mSymbol;
+                  pSymbol[i].width:=tSymbol[8].width;
+                  pSymbol[i].height:=tSymbol[8].height;
+                 end;
+            '9': begin
+                  pSymbol[i].ptSymbol:=tSymbol[9].mSymbol;
+                  pSymbol[i].width:=tSymbol[9].width;
+                  pSymbol[i].height:=tSymbol[9].height;
+                 end;
+            'a','A': begin
+                  pSymbol[i].ptSymbol:=tSymbol[17].mSymbol;
+                  pSymbol[i].width:=tSymbol[17].width;
+                  pSymbol[i].height:=tSymbol[17].height;
+                 end;
+            'b','B': begin
+                  pSymbol[i].ptSymbol:=tSymbol[18].mSymbol;
+                  pSymbol[i].width:=tSymbol[18].width;
+                  pSymbol[i].height:=tSymbol[18].height;
+                 end;
+            'c','C': begin
+                  pSymbol[i].ptSymbol:=tSymbol[19].mSymbol;
+                  pSymbol[i].width:=tSymbol[19].width;
+                  pSymbol[i].height:=tSymbol[19].height;
+                 end;
+            'd','D': begin
+                  pSymbol[i].ptSymbol:=tSymbol[20].mSymbol;
+                  pSymbol[i].width:=tSymbol[20].width;
+                  pSymbol[i].height:=tSymbol[20].height;
+                 end;
+            'e','E': begin
+                  pSymbol[i].ptSymbol:=tSymbol[15].mSymbol;
+                  pSymbol[i].width:=tSymbol[15].width;
+                  pSymbol[i].height:=tSymbol[15].height;
+                 end;
+            'f','F': begin
+                  pSymbol[i].ptSymbol:=tSymbol[21].mSymbol;
+                  pSymbol[i].width:=tSymbol[21].width;
+                  pSymbol[i].height:=tSymbol[21].height;
+                 end;
+            'g','G': begin
+                  pSymbol[i].ptSymbol:=tSymbol[22].mSymbol;
+                  pSymbol[i].width:=tSymbol[22].width;
+                  pSymbol[i].height:=tSymbol[22].height;
+                 end;
+            'h','H': begin
+                  pSymbol[i].ptSymbol:=tSymbol[23].mSymbol;
+                  pSymbol[i].width:=tSymbol[23].width;
+                  pSymbol[i].height:=tSymbol[23].height;
+                 end;
+            'i','I': begin
+                  pSymbol[i].ptSymbol:=tSymbol[24].mSymbol;
+                  pSymbol[i].width:=tSymbol[24].width;
+                  pSymbol[i].height:=tSymbol[24].height;
+                 end;
+            'j','J': begin
+                  pSymbol[i].ptSymbol:=tSymbol[25].mSymbol;
+                  pSymbol[i].width:=tSymbol[25].width;
+                  pSymbol[i].height:=tSymbol[25].height;
+                 end;
+            'k','K': begin
+                  pSymbol[i].ptSymbol:=tSymbol[26].mSymbol;
+                  pSymbol[i].width:=tSymbol[26].width;
+                  pSymbol[i].height:=tSymbol[26].height;
+                 end;
+            'l','L': begin
+                  pSymbol[i].ptSymbol:=tSymbol[13].mSymbol;
+                  pSymbol[i].width:=tSymbol[13].width;
+                  pSymbol[i].height:=tSymbol[13].height;
+                 end;
+            'm','M': begin
+                  pSymbol[i].ptSymbol:=tSymbol[27].mSymbol;
+                  pSymbol[i].width:=tSymbol[27].width;
+                  pSymbol[i].height:=tSymbol[27].height;
+                 end;
+            'n','N': begin
+                  pSymbol[i].ptSymbol:=tSymbol[28].mSymbol;
+                  pSymbol[i].width:=tSymbol[28].width;
+                  pSymbol[i].height:=tSymbol[28].height;
+                 end;
+            'o','O': begin
+                  pSymbol[i].ptSymbol:=tSymbol[29].mSymbol;
+                  pSymbol[i].width:=tSymbol[29].width;
+                  pSymbol[i].height:=tSymbol[29].height;
+                 end;
+            'p','P': begin
+                  pSymbol[i].ptSymbol:=tSymbol[30].mSymbol;
+                  pSymbol[i].width:=tSymbol[30].width;
+                  pSymbol[i].height:=tSymbol[30].height;
+                 end;
+            'q','Q': begin
+                  pSymbol[i].ptSymbol:=tSymbol[31].mSymbol;
+                  pSymbol[i].width:=tSymbol[31].width;
+                  pSymbol[i].height:=tSymbol[31].height;
+                 end;
+            'r','R': begin
+                  pSymbol[i].ptSymbol:=tSymbol[32].mSymbol;
+                  pSymbol[i].width:=tSymbol[32].width;
+                  pSymbol[i].height:=tSymbol[32].height;
+                 end;
+            's','S': begin
+                  pSymbol[i].ptSymbol:=tSymbol[33].mSymbol;
+                  pSymbol[i].width:=tSymbol[33].width;
+                  pSymbol[i].height:=tSymbol[33].height;
+                 end;
+            't','T': begin
+                  pSymbol[i].ptSymbol:=tSymbol[11].mSymbol;
+                  pSymbol[i].width:=tSymbol[11].width;
+                  pSymbol[i].height:=tSymbol[11].height;
+                 end;
+            'u','U': begin
+                  pSymbol[i].ptSymbol:=tSymbol[34].mSymbol;
+                  pSymbol[i].width:=tSymbol[34].width;
+                  pSymbol[i].height:=tSymbol[34].height;
+                 end;
+            'v','V': begin
+                  pSymbol[i].ptSymbol:=tSymbol[14].mSymbol;
+                  pSymbol[i].width:=tSymbol[14].width;
+                  pSymbol[i].height:=tSymbol[14].height;
+                 end;
+            'w','W': begin
+                  pSymbol[i].ptSymbol:=tSymbol[35].mSymbol;
+                  pSymbol[i].width:=tSymbol[35].width;
+                  pSymbol[i].height:=tSymbol[35].height;
+                 end;
+            'x','X': begin
+                  pSymbol[i].ptSymbol:=tSymbol[12].mSymbol;
+                  pSymbol[i].width:=tSymbol[12].width;
+                  pSymbol[i].height:=tSymbol[12].height;
+                 end;
+            'y','Y': begin
+                  pSymbol[i].ptSymbol:=tSymbol[36].mSymbol;
+                  pSymbol[i].width:=tSymbol[36].width;
+                  pSymbol[i].height:=tSymbol[36].height;
+				 end;
+            'z','Z': begin
+				  pSymbol[i].ptSymbol:=tSymbol[37].mSymbol;
+                  pSymbol[i].width:=tSymbol[37].width;
+                  pSymbol[i].height:=tSymbol[37].height;
+                 end;
+			'.',',': begin
+				  pSymbol[i].ptSymbol:=tSymbol[16].mSymbol;
+                  pSymbol[i].width:=tSymbol[16].width;
+				  pSymbol[i].height:=tSymbol[16].height;
+				 end;
+			' ','	': begin
+				  pSymbol[i].ptSymbol:=tSymbol[39].mSymbol;
+                  pSymbol[i].width:=tSymbol[39].width;
+                  pSymbol[i].height:=tSymbol[39].height;
+                 end;
+            else begin
+                  pSymbol[i].ptSymbol:=tSymbol[38].mSymbol;
+                  pSymbol[i].width:=tSymbol[38].width;
+                  pSymbol[i].height:=tSymbol[38].height;
+                 end;
+        end;
+
+
+        psymbol[i].width:=psymbol[i].width*theight/psymbol[i].height;
+        psymbol[i].height:=theight;
+
+		if i>1
+			then
+                    begin
+					  pSymbol[i].x:=pSymbol[i-1].x+pSymbol[i-1].width+TLength;
+					  pSymbol[i].y:=pSymbol[i-1].y;
+                    end;
+
+	end;
+    if draw=true then
+      PrintText(pSymbol,k);
+    Result:=k;
+end;
+
+function FindSymbol(strings:string; lu: string): integer;
+var k: integer; i:integer;
+begin
+    k:=length(strings);
+    for i := 1 to k do
+        if (strings[k]=lu) then   begin
+            Result:=k;
+            exit();
+        end;
+end;
+
+function CreateButton(x,y:real; padding:integer; text2:string; TLength: real; centering:string;
+		 rasing:integer;  draw:boolean; theight:real; texture:string; mx, my: integer):boolean;
+var k: integer; width, height:real; A:integer; p:boolean; n:integer;  i:integer;
+begin
+  k:=TprintText(text2,x+padding,y+padding,tlength,false, theight);
+  width:=abs(pSymbol[1].x-(pSymbol[k].x+pSymbol[k].width));
+  height:=theight;
+
+  if texture='orange' then
+    glBindTexture(GL_TEXTURE_2D, Tex.gobject[1]);
+  if texture='blue' then
+    glBindTexture(GL_TEXTURE_2D, Tex.gobject[2]);
+  if texture='green-light' then
+    glBindTexture(GL_TEXTURE_2D, Tex.gobject[3]);
+  if texture='purple' then
+    glBindTexture(GL_TEXTURE_2D, Tex.gobject[4]);
+  if texture='blue-light' then
+    glBindTexture(GL_TEXTURE_2D, Tex.gobject[5]);
+  if texture='blue-dark' then
+    glBindTexture(GL_TEXTURE_2D, Tex.gobject[6]);
+  if texture='red-dark' then
+    glBindTexture(GL_TEXTURE_2D, Tex.gobject[7]);
+  if texture='orange-light' then
+    glBindTexture(GL_TEXTURE_2D, Tex.gobject[8]);
+  if texture='green' then
+    glBindTexture(GL_TEXTURE_2D, Tex.gobject[9]);
+
+
+  height:=height+padding*2;
+  width:=width+padding*2;
+  n:=Trunc(width+rasing);
+  if centering='center' then
+  begin
+    x:=x-width/2;
+    y:=y-height/2;
+    pSymbol[1].x:=x+padding-tlength;
+    pSymbol[1].y:=y+padding-2;
+    for I := 2 to k do
+      begin
+        pSymbol[i].x:=pSymbol[i-1].x+pSymbol[i-1].width+TLength;
+        pSymbol[i].y:=pSymbol[i-1].y;
+      end;
+  end;
+
+  if centering='center-y' then
+  begin
+    y:=y-height/2;
+    pSymbol[1].y:=y+padding-2;
+    for I := 2 to k do
+        pSymbol[i].y:=pSymbol[i-1].y;
+  end;
+
+  if centering='center-x' then
+  begin
+    x:=x-width/2;
+    pSymbol[1].x:=x+padding-tlength;
+    for I := 2 to k do
+        pSymbol[i].x:=pSymbol[i-1].x+pSymbol[i-1].width+TLength;
+  end;
+
+   if (mx>x) and (mx<width+x) and (my>y) and (my<height+y) then
+    begin
+    width:=n;
+    glBindTexture(GL_TEXTURE_2D, Tex.gobject[8]);
+      if tclick=true then begin
+         Result:=true;
+      end
+        else begin
+        result:=false;
+        end;
+	end;
+
+  draw_quad(x,y,width,height);
+  printText(pSymbol,k);
+
+end;
+
+Constructor TAnimation.Create(FrameTime:integer);
+begin
+  FFrameTime:=FrameTime;
+  FCurrentTime:=0;
+  FStoped:=true;
+end;
+
+Procedure   TAnimation.AddFrame(Picture:glUint);
+begin
+  SetLength(FPictures,Length(FPictures)+1);
+  FPictures[LEngth(FPictures)-1]:=Picture;
+end;
+Procedure   TAnimation.Start();
+begin
+  FStoped:=false;
+end;
+Procedure   TAnimation.Stop();
+begin
+  FStoped:=true;
+end;
+Procedure   TAnimation.Update(dt:integer);
+begin
+  if FStoped then
+    Exit;
+
+  FCurrentTime:=FCurrentTime+dt;
+  if FCurrentTime>=Length(FPictures)*FFrameTime then
+    FCurrentTime:=0;
+end;
+Procedure   TAnimation.Draw();
+var
+  Frame:integer;
+begin
+  Frame:=FCurrentTime div FFrameTime;
+
+  glBindTexture(GL_TEXTURE_2D, FPictures[Frame]);
+  //draw_quad(
+end;
+
+
+end.
